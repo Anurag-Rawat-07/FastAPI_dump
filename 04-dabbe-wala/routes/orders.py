@@ -9,7 +9,7 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 @router.post("/", response_model=Order)
 def create_order(order: OrderCreate, session: Session = Depends(get_session)):
-    db_order = Order(**order.model_dump())
+    db_order = Order(**order.model_dump()) #our model is a pydantic model, so we can use model_dump to convert it to a dict
     session.add(db_order)
     session.commit()
     session.refresh(db_order)
@@ -30,7 +30,11 @@ def list_orders(
         query = query.where(Order.status == status)
 
     if created_date:
-        start = datetime.combine(created_date, datetime.min.time())
+        start = datetime.combine(created_date, datetime.min.time()) 
+        #if we don't specify the time, it will default to 00:00:00, so we need to set the time to the minimum time of the day
+        #why do we require datetime.comibine? Because created_date is a date object, 
+        # and we need to convert it to a datetime object to compare it with the created_at field in the database,
+        #  which is a datetime field. 
         end = datetime.combine(created_date, datetime.max.time())
         query = query.where(Order.created_at >= start, Order.created_at <= end)
 

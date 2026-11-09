@@ -14,13 +14,13 @@ router = APIRouter(prefix="/books", tags=["books"])
 def list_books(
     title: Optional[str] = Query(default=None),
     author: Optional[str] = Query(default=None),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session)      #dependency injection for database session
     ):
-    query = select(Book).where(
+    query = select(Book).where(                  #writing a query to select books that are not sold
         Book.is_sold == False
     )
-    if title:
-        query = query.where(Book.title.contains(title))
+    if title:                                              #added filtering for title and author if provided in query parameters
+        query = query.where(Book.title.contains(title))    #these are add on to the base query to filter the results based on title and author
     if author:
         query = query.where(Book.author.contains(author))
     
@@ -32,16 +32,16 @@ def list_books(
 def create_book(
     book_data: BookCreate,
     session: Session = Depends(get_session),
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key)         #for writing information to the database, we need to verify the API key for authentication and authorization
 ):
-    book = Book.model_validate(book_data)
+    book = Book.model_validate(book_data)          #model validate goes and validate aa the data against the model that you have created
     session.add(book)
-    session.commit()
+    session.commit()         #sql qurries
     session.refresh(book)
     return book
 
 
-@router.patch("/{book_id}", response_model=BookRead)
+@router.patch("/{book_id}", response_model=BookRead)  #path parameter for book_id, response model is BookRead
 def update_book(
     book_id: int,
     updates: BookUpdate,
@@ -52,9 +52,9 @@ def update_book(
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
     
-    book_data = updates.model_dump(exclude_unset=True)
+    book_data = updates.model_dump(exclude_unset=True)  #converted string to dictionary 
     for key, value in book_data.items():
-        setattr(book, key, value)
+        setattr(book, key, value)                       #set attribute of the book object to the new value from the updates
 
     session.add(book)
     session.commit()
